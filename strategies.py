@@ -1,4 +1,5 @@
 import engine
+
 GRID_SIZE = 16
 active_tiles = set()
 tile_counters = {}
@@ -42,15 +43,16 @@ def carrot(x, y):
 def tree(x, y):
 	if (x + y) % 2 != 0:
 		return
+
+	if get_ground_type() == Grounds.Soil:
+		till()
+
 	if get_entity_type() != Entities.Tree:
-		if get_ground_type() == Grounds.Grassland:
-			till()
 		plant(Entities.Tree)
 		return
+		
 	if can_harvest():
 		harvest()
-		if get_ground_type() == Grounds.Grassland:
-			till()
 		plant(Entities.Tree)
 
 def pumpkin(x, y):
@@ -155,7 +157,7 @@ def grow_snake():
 		move(South)
 	while get_pos_x() > 0:
 		move(West)
-	change_hat(Hats.Green_Hat)
+	change_hat(Hats.Purple_Hat)
 
 def move_to_apple(tx, ty):
 	while get_pos_x() != tx or get_pos_y() != ty:

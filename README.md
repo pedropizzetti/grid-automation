@@ -1,4 +1,4 @@
-# Grid Automation Strategies
+# Estratégias de Automação em Grid
 
 Implementação de automação em ambiente baseado em grid, com foco em tomada de decisão local, organização espacial e otimização de processos.
 

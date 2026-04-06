@@ -1,7 +1,6 @@
 import strategies
 import engine
 
-GRID_SIZE = 16
 CROP_LAYOUT = [
 	(2, "carrot"),
 	(5, "pumpkin"),
@@ -10,6 +9,7 @@ CROP_LAYOUT = [
 	(14, "hay"),
 	(16, "tree")
 ]
+
 CROP_ACTIONS = {
 	"carrot": strategies.carrot,
 	"pumpkin": strategies.pumpkin,
@@ -19,25 +19,21 @@ CROP_ACTIONS = {
 	"tree": strategies.tree
 }
 
-def choose_crop(x):
+def get_action(x, y):
 	for limit, crop in CROP_LAYOUT:
 		if x < limit:
-			return crop
-	return "hay"
-
-def work_tile(x, y):
-	crop_type = choose_crop(x)
-	if crop_type in CROP_ACTIONS:
-		action_func = CROP_ACTIONS[crop_type]
-		action_func(x, y)
-	else:
-		strategies.hay(x, y)
-	engine.water_if_needed()
+			CROP_ACTIONS[crop](x, y)
+			engine.water_if_needed()
+			return
 
 def run():
+	change_hat(Hats.Green_Hat)
 	while True:
+
 		if num_items(Items.Bone) < 10000:
+			engine.sweep_grid(strategies.clear_farm)
 			strategies.grow_snake()
-		engine.sweep_grid(work_tile)
+		else:
+			engine.sweep_grid(get_action)
 
 run()

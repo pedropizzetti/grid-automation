@@ -1,34 +1,14 @@
 import engine
 
 GRID_SIZE = 16
-active_tiles = set()
 tile_counters = {}
+
+def clear_farm(x, y):
+	if can_harvest():
+		harvest()
 
 def get_tile_key(x, y):
 	return (x, y)
-
-def mark_active(x, y):
-	active_tiles.add((x, y))
-
-def mark_neighbors(x, y):
-	mark_active(x, y)
-	if x > 0:
-		mark_active(x - 1, y)
-	if x < GRID_SIZE - 1:
-		mark_active(x + 1, y)
-	if y > 0:
-		mark_active(x, y - 1)
-	if y < GRID_SIZE - 1:
-		mark_active(x, y + 1)
-
-def ensure_crop(crop, x, y):
-	current = get_entity_type()
-	if current != crop:
-		engine.prepare_tile()
-		plant(crop)
-		mark_active(x, y)
-		return False
-	return True
 
 def carrot(x, y):
 	if get_entity_type() != Entities.Carrot:
@@ -43,136 +23,124 @@ def carrot(x, y):
 def tree(x, y):
 	if (x + y) % 2 != 0:
 		return
-
 	if get_ground_type() == Grounds.Soil:
 		till()
-
 	if get_entity_type() != Entities.Tree:
 		plant(Entities.Tree)
 		return
-		
 	if can_harvest():
 		harvest()
 		plant(Entities.Tree)
 
 def pumpkin(x, y):
-	global tile_counters
 	key = get_tile_key(x, y)
 	if key not in tile_counters:
 		tile_counters[key] = 0
+	
+	fase = tile_counters[key]
+	entidade = get_entity_type()
 
-	count = tile_counters[key]
-
-	if count == 0:
-		if get_entity_type() != Entities.Pumpkin:
+	if fase == 0:
+		if entidade != Entities.Pumpkin:
 			engine.prepare_tile()
 			plant(Entities.Pumpkin)
 		tile_counters[key] = 1
-
-	elif count == 1:
-		if get_entity_type() != Entities.Pumpkin:
+		return
+	elif fase == 1:
+		if entidade != Entities.Pumpkin:
 			engine.prepare_tile()
 			plant(Entities.Pumpkin)
-			tile_counters[key] = 0
-		elif can_harvest():
-			harvest()
-			engine.prepare_tile()
-			plant(Entities.Pumpkin)
-			tile_counters[key] = 0
+			tile_counters[key] = 1
 		else:
 			tile_counters[key] = 2
-
-	elif count == 2:
-		if can_harvest():
-			harvest()
-		engine.prepare_tile()
-		plant(Entities.Pumpkin)
-		tile_counters[key] = 0
-		mark_active(x, y)
+		return
+	elif fase == 2:
+		if entidade == Entities.Pumpkin:
+			if can_harvest():
+				harvest()
+				engine.prepare_tile()
+				plant(Entities.Pumpkin)
+				tile_counters[key] = 1
+		else:
+			tile_counters[key] = 0
 
 def sunflower(x, y):
-	if not ensure_crop(Entities.Sunflower, x, y):
-		return
-	if not can_harvest():
-		return
-	if measure() >= 7:
-		harvest()
-		engine.smart_plant(Entities.Sunflower)
-		mark_active(x, y)
+	if get_entity_type() != Entities.Sunflower:
+		engine.prepare_tile()
+		plant(Entities.Sunflower)
+	elif can_harvest():
+		if measure() >= 7:
+			harvest()
+			plant(Entities.Sunflower)
 
 def hay(x, y):
 	if get_ground_type() == Grounds.Soil:
 		till()
 	if can_harvest():
 		harvest()
-		mark_active(x, y)
 	plant(Entities.Grass)
 
 def cactus(x, y):
-	if not ensure_crop(Entities.Cactus, x, y):
+	if get_entity_type() != Entities.Cactus:
+		engine.prepare_tile()
+		plant(Entities.Cactus)
 		return
+	
 	current = measure()
-	swapped = False
 	if x < GRID_SIZE - 1:
 		east = measure(East)
 		if east != None and current > east:
 			swap(East)
-			current = east
-			swapped = True
-			mark_neighbors(x, y)
 	if y < GRID_SIZE - 1:
 		north = measure(North)
 		if north != None and current > north:
 			swap(North)
-			current = north
-			swapped = True
-			mark_neighbors(x, y)
-	if swapped:
-		return
-	if not can_harvest():
-		return
-	if x < GRID_SIZE - 1:
-		east = measure(East)
-		if east == None or current > east:
-			return
-	if y < GRID_SIZE - 1:
-		north = measure(North)
-		if north == None or current > north:
-			return
-	harvest()
-	mark_neighbors(x, y)
+	if can_harvest():
+		harvest()
+
 
 def grow_snake():
+	if measure() == None:
+		change_hat(Hats.Carrot_Hat) 
+		return
+
 	change_hat(Hats.Dinosaur_Hat)
 	while True:
-		coords = measure()
-		if coords == None:
+		apple = measure()
+		if apple == None:
 			break
-		ax = coords[0]
-		ay = coords[1]
-		success = move_to_apple(ax, ay)
-		if not success:
+		
+		if not move_safe(apple[0], apple[1]):
 			break
-	while get_pos_y() > 0:
-		move(South)
-	while get_pos_x() > 0:
-		move(West)
-	change_hat(Hats.Purple_Hat)
+			
+	engine.move_to_origin()
+	change_hat(Hats.Carrot_Hat) 
 
-def move_to_apple(tx, ty):
+def move_safe(tx, ty):
 	while get_pos_x() != tx or get_pos_y() != ty:
-		if get_pos_x() != tx:
-			if get_pos_x() < tx:
-				if not move(East):
-					return False
-			else:
-				if not move(West):
-					return False
-		if get_pos_y() != ty:
+		moved = False
+		
+		if get_pos_x() < tx:
+			if move(East):
+				moved = True
+		elif get_pos_x() > tx:
+			if move(West):
+				moved = True
+			
+		if not moved:
 			if get_pos_y() < ty:
-				if not move(North):
-					return False
-			else:
-				if not move(South):
-					return False
+				if move(North):
+					moved = True
+			elif get_pos_y() > ty:
+				if move(South):
+					moved = True
+				
+	
+		if not moved:
+			for d in [North, East, South, West]:
+				if move(d):
+					moved = True
+					break
+			if not moved:
+				return False
 	return True

@@ -19,7 +19,7 @@ def carrot(x, y):
 		harvest()
 		engine.prepare_tile()
 		plant(Entities.Carrot)
-		
+		 
 def tree(x, y):
 	if (x + y) % 2 != 0:
 		return
@@ -97,7 +97,6 @@ def cactus(x, y):
 			swap(North)
 	if can_harvest():
 		harvest()
-
 
 def grow_snake():
 	if measure() == None:
